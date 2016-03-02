@@ -1,92 +1,140 @@
 package stock;
 
-import java.util.HashMap;
-import java.util.Map;
+// Skeleton version of StockData.java that links to a database.
+// NOTE: You should not have to make any changes to the other
+// Java GUI classes for this to work, if you complete it correctly.
+// Indeed these classes shouldn't even need to be recompiled
+import java.sql.*; // DB handling package
+import java.io.*;
+import org.apache.derby.drda.NetworkServerControl;
 
-public class StockData { // back-end of the program
+public class StockData {
 
-    private static class Item {
-
-        Item(String n, double p, int q) {
-            name = n; // sets the name equal to "n"
-            price = p; // sets the price equal to "p"
-            quantity = q; // sets the quantity equal to "q"
-        }
-
-        // get methods
-        public String getName() {
-            return name; // gets the name as a string and returns it to whichever method is calling for it
-        }
-
-        public double getPrice() {
-            return price; // gets the price as a double and returns it to whichever method is calling for it
-        }
-
-        public int getQuantity() {
-            return quantity; // gets the quantity as an integer and returns it to whichever method is calling for it
-        }
-
-        // instance variables 
-        private final String name; // hard-coded value for the string "name"
-        private final double price; // hard-coded value for the double "price"
-        private int quantity; // private class for the integer "quantity"
-    }
-
-    // with a Map you use put to insert a key, value pair 
-    // and get(key) to retrieve the value associated with a key
-    // You don't need to understand how this works!
-    private final static Map<String, Item> stock = new HashMap(); // hard-coded value for the constructor
+    private static Connection connection;
+    private static Statement stmt;
 
     static {
-        // if you want to have extra stock items, put them in here
-        // use the same style - keys should be Strings
-        stock.put("00", new Item("Bath towel", 5.50, 10)); // adds an item to the stock, with the name "bath towel", item number "00", price of 5.50 and quantity of 10
-        stock.put("11", new Item("Plebney light", 20.00, 5)); // adds an item to the stock, with the name "plebney light", item number "11", price of 20 and quantity of 5
-        stock.put("22", new Item("Gorilla suit", 30.00, 7)); // adds an item to the stock, with the name "gorilla suit", item number "22", price of 30 and quantity of 7
-        stock.put("33", new Item("Whizz games console", 50.00, 8)); // adds an item to the stock, with the name "whizz games console", item number "33", price of 50 and quantity of 8
-        stock.put("44", new Item("Oven", 200.00, 4)); // adds an item to the stock, with the name "oven", item number "44", price of 200 and quantity of 4
+        // standard code to open a connection and statement to an Access database
+        try {
+            NetworkServerControl server = new NetworkServerControl();
+            server.start(null);
+            // Load JDBC driver
+            Class.forName("org.apache.derby.jdbc.EmbeddedDriver");
+            //Establish a connection
+            String sourceURL = "jdbc:derby://localhost:1527/"
+                    + new File("UserDB").getAbsolutePath() + ";";
+            connection = DriverManager.getConnection(sourceURL, "use", "use");
+            stmt = connection.createStatement();
+        } // The following exceptions must be caught
+        catch (ClassNotFoundException cnfe) {
+            System.out.println(cnfe);
+        } catch (SQLException sqle) {
+            System.out.println(sqle);
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+
     }
 
+    // You could make methods getName, getPrice and getQuantity simpler by using an auxiliary
+    // private String method getField(String key, int fieldNo) to return the appropriate field as a String
     public static String getName(String key) {
-        Item item = stock.get(key); // gets  the item from the key from the class stock
-        if (item == null) { // if the item entered does not exist
-            return null; // null means no such item
-        } else { // otherwise
-            return item.getName(); // get the name of item
+        
+        
+        try {
+            // Need single quote marks ' around the key field in SQL. This is easy to get wrong!
+            // For instance if key was "11" the SELECT statement would be:
+            // SELECT * FROM Stock WHERE stockKey = '11'
+            ResultSet res = stmt.executeQuery("SELECT * FROM stock WHERE id =" + Integer.parseInt(key) );
+            if (res.next()) { // there is a result
+                // the name field is the second one in the ResultSet
+                // Note that with  ResultSet we count the fields starting from 1
+                return res.getString(2);
+            } else {
+                return null;
+            }
+        } catch (SQLException e) {
+            System.out.println(e);
+            return null;
         }
     }
 
     public static double getPrice(String key) {
-        Item item = stock.get(key); // gets the item from the key from the class stock
-        if (item == null) { // if the item entered does not exist
-            return -1.0; // negative price means no such item
-        } else { // otherwise
-            return item.getPrice(); // get the price of item
+        
+        try {
+            // Need single quote marks ' around the key field in SQL. This is easy to get wrong!
+            // For instance if key was "11" the SELECT statement would be:
+            // SELECT * FROM Stock WHERE stockKey = '11'
+            ResultSet res = stmt.executeQuery("SELECT * FROM stock WHERE id = " + key);
+            if (res.next()) { // there is a result
+                // the name field is the second one in the ResultSet
+                // Note that with  ResultSet we count the fields starting from 1
+                return res.getDouble(3);
+            } else {
+                return -1;
+            }
+        } catch (SQLException e) {
+            System.out.println(e);
+            return -1;
         }
     }
 
     public static int getQuantity(String key) {
-        Item item = stock.get(key); // gets  the item from the key from the class stock
-        if (item == null) { // if the item entered does not exist
-            return -1; // negative quantity means no such item
-        } else { // otherwise
-            return item.getQuantity(); // get the quantity of item
+        
+        try {
+            // Need single quote marks ' around the key field in SQL. This is easy to get wrong!
+            // For instance if key was "11" the SELECT statement would be:
+            // SELECT * FROM Stock WHERE stockKey = '11'
+            ResultSet res = stmt.executeQuery("SELECT * FROM stock WHERE id = " + key);
+            if (res.next()) { // there is a result
+                // the name field is the second one in the ResultSet
+                // Note that with  ResultSet we count the fields starting from 1
+                return res.getInt(4);
+            } else {
+                return -1;
+            }
+        } catch (SQLException e) {
+            System.out.println(e);
+            return -1;
         }
     }
 
-	// update stock levels
+    // update stock levels
     // extra is +ve if adding stock
     // extra is -ve if selling stock
     public static void update(String key, int extra) {
-        Item item = stock.get(key); // gets the item from the key from the class stock
-        if (item != null) { // if the item does not exist
-            item.quantity += extra; // add the quantity of it by one (?)
+        
+        // SQL UPDATE statement required. For instance if extra is 5 and stockKey is "11" then updateStr is
+        // UPDATE Stock SET stockQuantity = stockQuantity + 5 WHERE stockKey = '11'
+        String updateStr = "UPDATE stock SET quantity = quantity + " + extra + " WHERE key = '" + key + "'";
+        System.out.println(updateStr);
+        try {
+            stmt.executeUpdate(updateStr);
+        } catch (SQLException e) {
+            System.out.println(e);
+        }
+    }
+    
+    public static void purchase(String key, int quantityPurchased) {
+        
+        // SQL UPDATE statement required. For instance if extra is 5 and stockKey is "11" then updateStr is
+        // UPDATE Stock SET stockQuantity = stockQuantity + 5 WHERE stockKey = '11'
+        String updateStr = "UPDATE stock SET quantity = quantity + " + -quantityPurchased + " + WHERE key = " + key;
+        System.out.println(updateStr);
+        try {
+            stmt.executeUpdate(updateStr);
+        } catch (SQLException e) {
+            System.out.println(e);
         }
     }
 
+    // close the database
     public static void close() {
-        // Does nothing for this static version.
-        // Write a statement to close the database when you are using one
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            // this shouldn't happen
+            System.out.println(e);
+        }
     }
-
 }

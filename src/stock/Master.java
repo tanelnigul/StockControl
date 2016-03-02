@@ -59,6 +59,10 @@ public class Master extends JFrame implements ActionListener { // main GUI
             PurchaseItem purchaseItem = new PurchaseItem(); // ...then run this constructor
         }
 
+        if (e.getSource() == stock) { // if the button "quit" has been pressed...
+            UpdateStock updateStock = new UpdateStock(); // ...then run this constructor
+        }
+
         if (e.getSource() == quit) { // if the button "quit" has been pressed...
             StockData.close(); // ...then close the StockData class...
             System.exit(0); // ...and close the program
